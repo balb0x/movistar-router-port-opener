@@ -11,6 +11,14 @@ main.py [-h] [-i IP] -a {add,remove,check} -p PASSWORD -d
                --i-start I_START --i-end I_END --protocol {TCP,UDP,Both}
 ```
 
+## Installation
+
+You just need to install the packages from the requirements.txt
+
+```
+pip3 install -r requirements.txt
+```
+
 ## Parameters
 
 | Parameter                 | Usage                                       |
