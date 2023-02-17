@@ -3,6 +3,8 @@ from random import randint
 import requests
 from bs4 import BeautifulSoup
 
+from movistar_router_port_opener.port_opener.handler import PortHandler
+from movistar_router_port_opener.port_opener.port_message import PortMessage
 
 parser = argparse.ArgumentParser()
 
@@ -32,86 +34,18 @@ service_name = args.service_name
 protocol = args.protocol
 action = args.action
 
-access_url = 'http://' + router_ip + '/te_acceso_router.cgi'
-ports_url = 'http://' + router_ip + '/scvrtsrv.cmd'
+port_handler = PortHandler(password)
 
-session_key = ""
-cookies = {}
-headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
-
-def random_with_n_digits(n):
-    range_start = 10 ** (n - 1)
-    range_end = (10 ** n) - 1
-    return randint(range_start, range_end)
-
-
-def get_session_key():
-    global session_key, cookies
-    data = {'loginPassword': password}
-    session_key = str(random_with_n_digits(10))
-    cookies = {'sessionID': session_key}
-    requests.post(access_url, data, cookies=cookies, headers=headers)
-
-
-def add_port_proto():
-    if protocol == "TCP":
-        return "1,"
-    elif protocol == "UDP":
-        return "2,"
-    else:
-        return "0,"
-
-
-def add_port():
-    params = {
-        'action': 'add',
-        'srvName': service_name,
-        'dstWanIf': 'ppp0.1',
-        'srvAddr': destination_ip,
-        'proto': add_port_proto(),
-        'eStart': str(e_start) + ",",
-        'eEnd': str(e_end) + ",",
-        'iStart': str(i_start) + ",",
-        'iEnd': str(i_end) + ",",
-        'sessionKey': session_key
-    }
-    requests.get(ports_url, params=params, cookies=cookies)
-
-
-def compose_rml_command():
-    return destination_ip + "|" + str(e_start) + "|" + str(e_end) + "|" + \
-           ("TCP or UDP" if protocol == "Both" else protocol) + "|" + str(i_start) + "|" + str(i_end)
-
-
-def remove_port():
-    params = {
-        'action': 'remove',
-        'rmLst': compose_rml_command(),
-        'sessionKey': session_key
-    }
-    requests.get(ports_url, params=params, cookies=cookies)
-
-
-def check_port():
-    params = {
-        'action': 'view'
-    }
-    s = requests.get(ports_url, params=params, cookies=cookies)
-    soup = BeautifulSoup(s.content, features="html.parser")
-    inputs = soup.find_all("input", {"name": "rml"})
-    for inp in inputs:
-        if inp.get('value') == compose_rml_command():
-            print("True")
-            return
-    print("False")
-
-
-get_session_key()
+port_message = PortMessage(title=service_name,
+                           protocol=PortMessage.resolve_protocol(protocol),
+                           destination=destination_ip,
+                           external_port_range=(e_start, e_end),
+                           internal_port_range=(i_start, i_end)
+                           )
 
 if action == "check":
-    check_port()
+    port_handler.check_port(port_message)
 elif action == "add":
-    add_port()
+    port_handler.add_port(port_message)
 elif action == "remove":
-    remove_port()
+    port_handler.remove_port(port_message)
