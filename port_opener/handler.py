@@ -63,6 +63,9 @@ class PortHandler:
         requests.get(self.ports_url, params=params, cookies=self.cookies)
 
     def remove_port(self, port_message: PortMessage):
+        if self.session_key is None:
+            self.get_session_key()
+
         params = {
             'action': 'remove',
             'rmLst': port_message.compose(),
