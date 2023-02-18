@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 import requests
 
-from movistar_router_port_opener.port_opener.port_message import PortMessage
+from ..port_opener.port_message import PortMessage
 
 
 class PortHandler:
