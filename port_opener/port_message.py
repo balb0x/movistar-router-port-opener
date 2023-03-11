@@ -41,6 +41,15 @@ class PortMessage:
         return self.destination + "|" + str(self.e_start) + "|" + str(self.e_end) + "|" + \
            self.reverse_protocol(self.protocol) + "|" + str(self.i_start) + "|" + str(self.i_end)
 
+    def compare(self, other_port):
+        return \
+                self.destination == other_port.destination and \
+                self.e_start == other_port.e_start and \
+                self.e_end == other_port.e_end and \
+                self.i_start == other_port.i_start and \
+                self.i_end == other_port.i_end and \
+                self.protocol == other_port.protocol
+
     @staticmethod
     def resolve_protocol(protocol):
         if protocol == "TCP":

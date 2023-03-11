@@ -23,26 +23,34 @@ class PortHandler:
         requests.post(self.access_url, data, cookies=self.cookies, headers=self.headers)
 
     def check_port(self, port_message: PortMessage):
+        ports = self.get_ports()
+        for port in ports:
+            if port.compare(port_message):
+                return True
+        return False
+
+    def get_ports(self):
         if self.session_key is None:
             self.get_session_key()
 
         params = {
             'action': 'view'
         }
+
         s = requests.get(self.ports_url, params=params, cookies=self.cookies)
         soup = BeautifulSoup(s.content, features="html.parser")
-        inputs = soup.find_all("input", {"name": "rml"})
-        for inp in inputs:
-            values = inp.get('value').split("|")
-            if len(values) == 6:
-                if port_message.destination == values[0] \
-                        and port_message.e_start == int(values[1]) \
-                        and port_message.e_end == int(values[2]) \
-                        and port_message.protocol == PortMessage.resolve_protocol(values[3]) \
-                        and port_message.i_start == int(values[4]) \
-                        and port_message.i_end == int(values[5]):
-                    return True
-        return False
+        inputs = soup.find_all("tr")
+        ports = []
+        for inp in inputs[1:]:
+            tds = inp.find_all("td")
+            ports.append(PortMessage(
+                title=str(tds[0].string),
+                protocol=PortMessage.resolve_protocol(tds[3].string),
+                destination=str(tds[6].string),
+                external_port_range=(int(tds[1].string), int(tds[2].string)),
+                internal_port_range=(int(tds[4].string), int(tds[5].string))
+            ))
+        return ports
 
     def add_port(self, port_message: PortMessage):
         if self.session_key is None:
